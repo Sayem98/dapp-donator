@@ -1,7 +1,7 @@
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import Web3Modal from "web3modal";
-import { providers, Contract, utils,BigNumber } from "ethers";
+import { providers, Contract, utils, BigNumber } from "ethers";
 import { useEffect, useRef, useState } from "react";
 import { MY_CONTRACT_ADDRESS, abi } from "../constants";
 
@@ -54,21 +54,13 @@ export default function Home() {
     }
   }, [walletConnected]);
 
-  // get log data 
+  // get log data
 
-  useEffect(() => {}, []);
-  const setDonation = async () => {
-    try {
+  useEffect(() => {
+    const listen = async () => {
       const signer = await getProviderOrSigner(true);
       // Create a new instance of the Contract with a Signer
       const donationContract = new Contract(MY_CONTRACT_ADDRESS, abi, signer);
-      // call the offerDonation function from the contract
-      const tx = await donationContract.offerDonation(donationReason, {
-        value: donationAmount, // donation is in wei
-      });
-      setLoading(true);
-      await tx.wait();
-      setLoading(false);
       donationContract.on(
         "LogData",
         (amount, reason, donatorAddress, timestamp, event) => {
@@ -83,6 +75,21 @@ export default function Home() {
           alert(`Thank you for your donation of ${amount} Wei!`);
         }
       );
+    };
+    if (walletConnected) listen();
+  }, [walletConnected]);
+  const setDonation = async () => {
+    try {
+      const signer = await getProviderOrSigner(true);
+      // Create a new instance of the Contract with a Signer
+      const donationContract = new Contract(MY_CONTRACT_ADDRESS, abi, signer);
+      // call the offerDonation function from the contract
+      setLoading(true);
+      const tx = await donationContract.offerDonation(donationReason, {
+        value: donationAmount, // donation is in wei
+      });
+
+      setLoading(false);
     } catch (err) {
       console.error(err);
     }
@@ -95,18 +102,19 @@ export default function Home() {
       // console.log( donationContract)
 
       // Define the event you want to retrieve logs for
-      const eventName = 'LogData';
+      const eventName = "LogData";
 
       const eventSignature = donationContract.interface.getEvent(eventName);
       // Define the block range to search for event logs
-     console.log( )      // Retrieve the past event logs
-      provider.getLogs({
-        address: MY_CONTRACT_ADDRESS,
-        topics: [utils.id(`LogData(uint256,string,address,uint256)`)],
-        fromBlock: 3711850, // Starting block number
-        toBlock: 'latest', // Latest block number
-      })
-      .then((logs) => {
+      console.log(); // Retrieve the past event logs
+      provider
+        .getLogs({
+          address: MY_CONTRACT_ADDRESS,
+          topics: [utils.id(`LogData(uint256,string,address,uint256)`)],
+          fromBlock: 3711850, // Starting block number
+          toBlock: "latest", // Latest block number
+        })
+        .then((logs) => {
           // console.log(logs)
           // Process the retrieved event logs
           const filteredLogs = logs.filter((log) => {
@@ -115,16 +123,15 @@ export default function Home() {
             // convert the amount from hex to decimal
             const amountInDecimal = BigNumber.from(amount).toNumber();
             // console.log(amountInDecimal)if
-            if(amountInDecimal > 45) {
+            if (amountInDecimal > 45) {
               return true;
             }
-          } );
+          });
           setFilteredEvents(filteredLogs);
         })
         .catch((error) => {
-          console.error('Error:', error);
+          console.error("Error:", error);
         });
-      
     } catch (err) {
       console.error(err);
     }
@@ -134,9 +141,8 @@ export default function Home() {
     if (walletConnected) {
       if (loading) {
         return <button className={styles.button}>Loading...</button>;
-      } 
-      else {
-        return <span>connected</span>
+      } else {
+        return <span>connected</span>;
       }
     } else {
       return (
@@ -159,12 +165,16 @@ export default function Home() {
       </Head>
       <div className={styles.main}>
         <div>
-          <div style={{
-            display: "flex",
-            // justify end
-            alignItems: "flex-end",
-            justifyContent: "flex-end",
-          }}>{renderButton()}</div>          
+          <div
+            style={{
+              display: "flex",
+              // justify end
+              alignItems: "flex-end",
+              justifyContent: "flex-end",
+            }}
+          >
+            {renderButton()}
+          </div>
           <h1 className={styles.title}>
             Welcome to the Educator Donation dApp!
           </h1>
@@ -189,11 +199,11 @@ export default function Home() {
               style={{ marginRight: ".5rem" }}
             />
             <br></br>
-             <button
-            onClick={setDonation}
-            style={{ cursor: "pointer", backgroundColor: "blue" }}
+            <button
+              onClick={setDonation}
+              style={{ cursor: "pointer", backgroundColor: "blue" }}
             >
-            Submit
+              Submit
             </button>
           </div>
           <br></br>
@@ -205,10 +215,12 @@ export default function Home() {
               See donations over 45 wei
             </button>
             {/* create a table with 2 columns named reason and amount */}
-            <table style={{
-              border: "1px solid white",
-              marginTop: "1rem",
-            }} >
+            <table
+              style={{
+                border: "1px solid white",
+                marginTop: "1rem",
+              }}
+            >
               <thead>
                 <tr>
                   <th>Reason</th>
@@ -225,19 +237,30 @@ export default function Home() {
 
                   // Define the event data
                   const eventData = event.data; // Replace with your event data
-                  const eventName = "LogData" // Replace with your event name
+                  const eventName = "LogData"; // Replace with your event name
                   // Decode the event data
-                  const decodedData = iface.decodeEventLog(eventName, eventData, event.topics);
-                  
+                  const decodedData = iface.decodeEventLog(
+                    eventName,
+                    eventData,
+                    event.topics
+                  );
 
                   return (
                     <tr key={index}>
-                      <td style={{
-                        padding: "1rem",
-                      }}>{decodedData.reason}</td>
-                      <td style={{
-                        padding: "1rem",
-                      }}>{amountInDecimal}</td>
+                      <td
+                        style={{
+                          padding: "1rem",
+                        }}
+                      >
+                        {decodedData.reason}
+                      </td>
+                      <td
+                        style={{
+                          padding: "1rem",
+                        }}
+                      >
+                        {amountInDecimal}
+                      </td>
                     </tr>
                   );
                 })}
